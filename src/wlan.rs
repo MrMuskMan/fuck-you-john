@@ -1,6 +1,7 @@
 use std::{
     ffi::{OsStr, OsString},
     io::{Error, ErrorKind},
+    ptr::slice_from_raw_parts,
 };
 
 use windows::{
@@ -9,7 +10,7 @@ use windows::{
 };
 
 use crate::{
-    os_string_from_utf16_slice, raw_parts_to_slice,
+    os_string_from_utf16_slice,
     safe_windows::{enum_interface_profiles, enum_wlan_interfaces, get_profile_xml},
     xml::Xml,
     AnyResult,
@@ -38,24 +39,28 @@ impl Wlan {
 
     pub fn get_interfaces(&self) -> AnyResult<Vec<GUID>> {
         let interfaces = enum_wlan_interfaces(self.handle)?;
-        Ok(raw_parts_to_slice(
-            interfaces.InterfaceInfo.as_ptr(),
-            interfaces.dwNumberOfItems as usize,
-        )
-        .iter()
-        .map(|info| info.InterfaceGuid)
-        .collect::<Vec<GUID>>())
+        Ok(unsafe {
+            (*slice_from_raw_parts(
+                interfaces.InterfaceInfo.as_ptr(),
+                interfaces.dwNumberOfItems as usize,
+            ))
+            .iter()
+            .map(|info| info.InterfaceGuid)
+            .collect::<Vec<GUID>>()
+        })
     }
 
     pub fn get_profiles(&self, interface: GUID) -> AnyResult<Vec<OsString>> {
         let profiles = enum_interface_profiles(self.handle, interface)?;
-        Ok(raw_parts_to_slice(
-            profiles.ProfileInfo.as_ptr(),
-            profiles.dwNumberOfItems as usize,
-        )
-        .iter()
-        .filter_map(|info| os_string_from_utf16_slice(&info.strProfileName))
-        .collect::<Vec<OsString>>())
+        Ok(unsafe {
+            (*slice_from_raw_parts(
+                profiles.ProfileInfo.as_ptr(),
+                profiles.dwNumberOfItems as usize,
+            ))
+            .iter()
+            .filter_map(|info| os_string_from_utf16_slice(&info.strProfileName))
+            .collect::<Vec<OsString>>()
+        })
     }
 
     pub fn get_authentication(
