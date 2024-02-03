@@ -71,6 +71,7 @@ pub fn get_profile_xml(
             None,
         ))
         .ok()?;
+
         xml.to_hstring()
             .map(|str| str.to_os_string())
             .map_err(|err| {
