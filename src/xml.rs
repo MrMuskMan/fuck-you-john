@@ -1,6 +1,8 @@
-use std::{ffi::OsString, os::windows::ffi::OsStringExt};
+use std::{error::Error, ffi::OsString, os::windows::ffi::OsStringExt};
 
 use windows::{core::HSTRING, Data::Xml::Dom::XmlDocument};
+
+use crate::AnyResult;
 
 pub struct Xml {
     document: XmlDocument,
@@ -38,10 +40,11 @@ impl Default for Xml {
     }
 }
 
-impl From<OsString> for Xml {
-    fn from(os_str: OsString) -> Self {
+impl TryFrom<OsString> for Xml {
+    type Error = Box<dyn Error>;
+    fn try_from(os_str: OsString) -> AnyResult<Self> {
         let xml = Self::default();
-        xml.document.LoadXml(&HSTRING::from(os_str)).unwrap();
-        xml
+        xml.document.LoadXml(&HSTRING::from(os_str))?;
+        Ok(xml)
     }
 }

@@ -68,12 +68,12 @@ impl Wlan {
         interface: &GUID,
         profile: &OsStr,
     ) -> AnyResult<Authentication> {
-        let xml = Xml::from(get_profile_xml(
+        let xml = Xml::try_from(get_profile_xml(
             self.handle,
             interface,
             profile,
             Some(&mut 4u32),
-        )?);
+        )?)?;
         let authentication = xml
             .get(&["MSM", "security", "authEncryption", "authentication"])
             .ok_or(Box::new(Error::new(
